@@ -25,8 +25,16 @@ def get_mean_and_std(file, batch, channels, slices=None):
             img_chunck = remove_nan_and_outlier(img_chunck)
             for i in range(len(channels)):
                 means[i] += np.sum(img_chunck[:, :, :, i]) / (image_pixels_len * data_len)
+        
+        for chunck in range(0, data_len, batch):
+            chunck_slc = slice(chunck, chunck + batch if chunck + batch < data_len else data_len)
+            img_chunck = images[chunck_slc]
+            if slices:
+                img_chunck = img_chunck[chunck_slc, slices[0], slices[1], :]
+            img_chunck = remove_nan_and_outlier(img_chunck)
+            for i in range(len(channels)):
                 std[i] += np.sum((img_chunck[:, :, :, i] - means[i]) ** 2) / (image_pixels_len * data_len)
-                std[i] = np.sqrt(std[i])
+        std = np.sqrt(std)
         
     return means, std
         
@@ -176,7 +184,7 @@ def get_tf_datasets(path, batch=1024, force_split_data=False):
     train_ds = tf.data.Dataset.from_generator(
         lambda: data_generator(train_data_sequence),
         output_signature=output_signature
-    )
+    ).repeat(len(train_data_sequence))
 
     valid_data_sequence = CycloneDataSequence(valid_file_path, (means, stds), img_crop_w=img_w, batch_size=batch)
     valid_ds = tf.data.Dataset.from_generator(
