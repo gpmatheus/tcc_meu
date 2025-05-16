@@ -2,22 +2,74 @@ from tensorflow import keras
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
+import tensorflow as tf
+from sklearn.metrics import mean_squared_error
 
-model = keras.models.load_model('result.h5', compile=False)
+model = keras.models.load_model('452-126.68.keras', compile=False)
 model.compile(optimizer='adam', loss=keras.losses.MeanSquaredError(), metrics=['mse'])
 
-path = '_valid.h5'
+path = '_test.h5'
 
 with h5py.File(path) as file:
     data_len = file['info'].shape[0]
-    indexes = np.random.choice(data_len, size=4300, replace=False)
-    indexes.sort()
-    images = file['matrix'][indexes]
-    info = file['info'][indexes]
+    # indexes = np.random.choice(data_len, size=3000, replace=False)
+    # indexes.sort()
+    # images = file['matrix'][indexes]
+    # info = file['info'][indexes]
+    images = file['matrix'][:]
+    info = file['info'][:]
+
+from scipy.ndimage import rotate
+
+img_w = 64
+rotations = 10
+angles = tf.cast(tf.linspace(0, 360, rotations), tf.float32)
+
+def parse_example(image):
+    image = tf.cast(image, tf.float32)
+    image = tf.convert_to_tensor([preprocess_image_tf(image, ang) for ang in angles])
+    return image
+
+def preprocess_image_tf(image, angle_rad):
+    image_shape = tf.shape(image)[0:2]
+    cx = tf.cast(image_shape[1] / 2, tf.float32)
+    cy = tf.cast(image_shape[0] / 2, tf.float32)
+    cos_a = tf.math.cos(angle_rad)
+    sin_a = tf.math.sin(angle_rad)
+    transform = tf.stack([
+        cos_a, -sin_a, (1 - cos_a) * cx + sin_a * cy,
+        sin_a,  cos_a, (1 - cos_a) * cy - sin_a * cx,
+        0.0,    0.0
+    ])
+    transform = tf.reshape(transform, [8])
+    transform = tf.expand_dims(transform, 0)
+    image = tf.expand_dims(image, 0)
+    rotated = tf.raw_ops.ImageProjectiveTransformV3(
+        images=image,
+        transforms=transform,
+        output_shape=image_shape,
+        interpolation="BILINEAR",
+        fill_mode="REFLECT",
+        fill_value=0.0
+    )
+    rotated = tf.squeeze(rotated, 0)
+    return tf.image.resize_with_crop_or_pad(rotated, img_w, img_w)
+
+def pred(image):
+    res = model.predict(parse_example(image), verbose=0)
+    return tf.math.reduce_mean(res)
+
+x = info
+print('predicting...')
+y = tf.map_fn(pred, elems=images)
+print('done')
+
+mse = mean_squared_error(x, y)
+print(f'MSE: {mse}')
+rmse = np.sqrt(mse)
+print(f'RMSE: {rmse}')
 
 plt.figure(figsize=(6, 6))
-x = info
-y = model.predict(images)
 plt.scatter(x, y, color='blue')
 
 plt.plot([0, 180], [0, 180], color='red', linestyle='--', label='Linha y=x')
