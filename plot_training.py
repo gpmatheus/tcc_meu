@@ -1,7 +1,7 @@
 
 import json
 
-with open('n0-model_info.json', 'r') as json_data:
+with open('first-run/n0-model_info.json', 'r') as json_data:
     d = json.load(json_data)
     json_data.close()
     validmse = d['validmse']
