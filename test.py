@@ -8,7 +8,7 @@ import json
 from sklearn.metrics import mean_squared_error
 import datetime
 
-model = keras.models.load_model('fourth-run(image-previous_image)/292-118.59.keras', compile=False)
+model = keras.models.load_model('sixth-run(same_as_fourth-L2=1e-5-lr=5e-5)/227-119.89.keras', compile=False)
 model.compile(optimizer='adam', loss=keras.losses.MeanSquaredError(), metrics=['mse'])
 
 img_w = 64
@@ -38,7 +38,7 @@ path = 'TCIR-ALL_2017.h5'
 #     info = pd.read_hdf(path, key='info', mode='r')['Vmax']
 #     data_len = images.shape[0]
 
-with open('fourth-run(image-previous_image)/n0-model_info.json', 'r') as json_data:
+with open('sixth-run(same_as_fourth-L2=1e-5-lr=5e-5)/n0-model_info.json', 'r') as json_data:
     data = json.load(json_data)
     json_data.close()
     params = data['normparams']
