@@ -8,7 +8,7 @@ import json
 from sklearn.metrics import mean_squared_error
 import datetime
 
-model = keras.models.load_model('third-run(image-next_image)/268-120.81.keras', compile=False)
+model = keras.models.load_model('fourth-run(image-previous_image)/292-118.59.keras', compile=False)
 model.compile(optimizer='adam', loss=keras.losses.MeanSquaredError(), metrics=['mse'])
 
 img_w = 64
@@ -38,7 +38,7 @@ path = 'TCIR-ALL_2017.h5'
 #     info = pd.read_hdf(path, key='info', mode='r')['Vmax']
 #     data_len = images.shape[0]
 
-with open('third-run(image-next_image)/n1-model_info.json', 'r') as json_data:
+with open('fourth-run(image-previous_image)/n0-model_info.json', 'r') as json_data:
     data = json.load(json_data)
     json_data.close()
     params = data['normparams']
@@ -98,9 +98,9 @@ def pre_process(width, means, stds, batch=1024):
             generated_channels_idx = [channels.index(ch) for ch in generated_channels]
 
             new_channels = []
-            for j in range(cyclone_images.shape[0] - 1):
+            for j in range(1, cyclone_images.shape[0]):
                 current_img = np.expand_dims(cyclone_images[j, :, :, generated_channels_idx][0], axis=-1)
-                next_img = np.expand_dims(cyclone_images[j + 1, :, :, generated_channels_idx][0], axis=-1)
+                next_img = np.expand_dims(cyclone_images[j - 1, :, :, generated_channels_idx][0], axis=-1)
                 new_ch = current_img - next_img
                 new_channels.append(new_ch)
             new_channels = np.array(new_channels)
