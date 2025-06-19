@@ -1,7 +1,7 @@
 
 import json
 
-with open('fourth-run(image-previous_image)/n0-model_info.json', 'r') as json_data:
+with open('seventh-run(same_as_fourth-L2=5e-5-lr=5e-5)/n0-model_info.json', 'r') as json_data:
     d = json.load(json_data)
     json_data.close()
     validmse = d['validmse']
