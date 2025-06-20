@@ -1,1 +1,0 @@
-nesse teste, o parâmetro do regularizador L2 é de 1e-6, diferente do artigo original que é de 1e-5
