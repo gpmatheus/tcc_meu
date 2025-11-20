@@ -8,7 +8,7 @@ import json
 from sklearn.metrics import mean_squared_error
 import datetime
 
-model = keras.models.load_model('seventh-run(same_as_fourth-L2=5e-5-lr=5e-5)/292-118.04.keras', compile=False)
+model = keras.models.load_model('update/img-previous_img/seventh-run(same_as_fourth-L2=5e-5-lr=5e-5)/292-118.04.keras', compile=False)
 model.compile(optimizer='adam', loss=keras.losses.MeanSquaredError(), metrics=['mse'])
 
 img_w = 64
@@ -16,9 +16,9 @@ rotations = 10
 angles = tf.cast(tf.linspace(0, 360, rotations), tf.float32)
 channels = [0, 3]
 generated_channels = [0]
-ds = [f'{i}' for i in ['TCIR-ATLN_EPAC_WPAC.h5', 'TCIR-CPAC_IO_SH.h5']]
+ds = [f'data/{i}' for i in ['TCIR-ATLN_EPAC_WPAC.h5', 'TCIR-CPAC_IO_SH.h5']]
 
-# path = 'first-run/_test.h5'
+# path = 'original/single-file/_test.h5'
 # with h5py.File(path) as file:
 #     images = file['matrix'][:]
 #     info = file['info'][:]
@@ -29,16 +29,15 @@ def get_images_slice(images_shape, width):
     end = images_shape[1] // 2 + width // 2
     return slice(start, end)
 
-path = 'TCIR-ALL_2017.h5'
+path = 'data/TCIR-ALL_2017.h5'
+with h5py.File(path) as file:
+    images = file['matrix']
+    img_slc = get_images_slice(images.shape, img_w)
+    images = images[:, img_slc, img_slc, channels]
+    info = pd.read_hdf(path, key='info', mode='r')['Vmax']
+    data_len = images.shape[0]
 
-# with h5py.File(path) as file:
-#     images = file['matrix']
-#     img_slc = get_images_slice(images.shape, img_w)
-#     images = images[:, img_slc, img_slc, channels]
-#     info = pd.read_hdf(path, key='info', mode='r')['Vmax']
-#     data_len = images.shape[0]
-
-with open('seventh-run(same_as_fourth-L2=5e-5-lr=5e-5)/n0-model_info.json', 'r') as json_data:
+with open('update/img-previous_img/seventh-run(same_as_fourth-L2=5e-5-lr=5e-5)/n0-model_info.json', 'r') as json_data:
     data = json.load(json_data)
     json_data.close()
     params = data['normparams']
@@ -122,9 +121,9 @@ def pre_process(width, means, stds, batch=1024):
                 f['info'][-cyclone_info.shape[0]:] = cyclone_info
 
 print('normalizing images...')
-# images = clean_images(images)
-# for i in range(len(channels)):
-#     images[:, :, :, i] = (images[:, :, :, i] - means[i]) / stds[i]
+images = clean_images(images)
+for i in range(len(channels)):
+    images[:, :, :, i] = (images[:, :, :, i] - means[i]) / stds[i]
 
 pre_process(img_w, means, stds)
 
@@ -186,9 +185,9 @@ plt.plot([0, 180], [0, 180], color='red', linestyle='--', label='Linha y=x')
 plt.xlim(0, 180)  # Limite do eixo x
 plt.ylim(0, 180)
 
-plt.title("predição")
-plt.xlabel("Eixo X")
-plt.ylabel("Eixo Y")
+plt.title("RMSE (raiz quadrada do erro médio): {:.2f} nós".format(rmse))
+plt.xlabel("Velocidade do vento em nós")
+plt.ylabel("Predição da velocidade do vento em nós")
 plt.legend()
 
 plt.show()
